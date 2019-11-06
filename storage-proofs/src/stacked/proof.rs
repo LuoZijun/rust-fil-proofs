@@ -226,7 +226,8 @@ impl<'a, H: 'static + Hasher, G: 'static + Hasher> StackedDrg<'a, H, G> {
         // generate labels
         let (labels, _) = Self::generate_labels(graph, layer_challenges, replica_id, false)?;
 
-        let size = labels.labels_for_last_layer().len();
+        let labels: LabelsCache<H> = LabelsCache::new(&labels);
+        let size = merkletree::store::Store::len(labels.labels_for_last_layer());
 
         let labels: LabelsCache<H> = LabelsCache::new(&labels);
         let size = labels.label_at_last_layer().len();
@@ -518,7 +519,7 @@ impl<'a, H: 'static + Hasher, G: 'static + Hasher> StackedDrg<'a, H, G> {
                 // Encode original data into the last layer.
                 let tree_r_last_handle = s.spawn(|_| {
                     info!("encoding data");
-                    let size = labels.labels_for_last_layer().len();
+                    let size = merkletree::store::Store::len(labels.labels_for_last_layer());
                     labels
                         .labels_for_last_layer()
                         .read_range(0..size)
