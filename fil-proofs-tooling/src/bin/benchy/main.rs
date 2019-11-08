@@ -8,7 +8,7 @@ mod rational_post;
 mod stacked;
 
 fn main() {
-    pretty_env_logger::init_timed();
+    fil_logger::init();
 
     let stacked_cmd = SubCommand::with_name("stacked")
                 .about("Run stacked sealing")

@@ -367,7 +367,7 @@ mod tests {
     #[test]
     #[ignore]
     fn test_seal_lifecycle() -> Result<(), failure::Error> {
-        pretty_env_logger::try_init().ok();
+        fil_logger::init();
 
         let rng = &mut XorShiftRng::from_seed(crate::TEST_SEED);
 
