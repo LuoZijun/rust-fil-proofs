@@ -22,8 +22,7 @@ use storage_proofs::hasher::{Blake2sHasher, Domain, Hasher, PedersenHasher, Sha2
 use storage_proofs::porep::PoRep;
 use storage_proofs::proof::ProofScheme;
 use storage_proofs::stacked::{
-    self, ChallengeRequirements, LayerChallenges, StackedDrg, EXP_DEGREE,
-    TemporaryAuxCache
+    self, ChallengeRequirements, LayerChallenges, StackedDrg, TemporaryAuxCache, EXP_DEGREE,
 };
 
 fn file_backed_mmap_from_zeroes(n: usize, use_tmp: bool) -> Result<MmapMut, failure::Error> {
@@ -157,8 +156,13 @@ where
                 wall_time: replication_wall_time,
                 return_value: (pub_inputs, priv_inputs),
             } = measure(|| {
-                let (tau, (p_aux, t_aux)) =
-                    StackedDrg::<H, Sha256Hasher>::replicate(&pp, &replica_id, &mut data, None, Some(config.clone()))?;
+                let (tau, (p_aux, t_aux)) = StackedDrg::<H, Sha256Hasher>::replicate(
+                    &pp,
+                    &replica_id,
+                    &mut data,
+                    None,
+                    Some(config.clone()),
+                )?;
 
                 let pb = stacked::PublicInputs::<H::Domain, <Sha256Hasher as Hasher>::Domain> {
                     replica_id,
@@ -169,8 +173,8 @@ where
 
                 // Convert TemporaryAux to TemporaryAuxCache, which instantiates all
                 // elements based on the configs stored in TemporaryAux.
-                let t_aux = TemporaryAuxCache::new(&t_aux)
-                    .expect("failed to restore contents of t_aux");
+                let t_aux =
+                    TemporaryAuxCache::new(&t_aux).expect("failed to restore contents of t_aux");
 
                 let pv = stacked::PrivateInputs { p_aux, t_aux };
 
@@ -282,8 +286,13 @@ where
         if let Some(data) = d {
             if *extract {
                 let m = measure(|| {
-                    StackedDrg::<H, Sha256Hasher>::extract_all(&pp, &replica_id, &data, Some(config.clone()))
-                        .map_err(|err| err.into())
+                    StackedDrg::<H, Sha256Hasher>::extract_all(
+                        &pp,
+                        &replica_id,
+                        &data,
+                        Some(config.clone()),
+                    )
+                    .map_err(|err| err.into())
                 })?;
 
                 assert_ne!(&(*data), m.return_value.as_slice());

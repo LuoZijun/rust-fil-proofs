@@ -80,7 +80,7 @@ pub fn get_unsealed_range<T: Into<PathBuf> + AsRef<Path>>(
         ),
         &replica_id,
         &data,
-        Some(config.clone()),
+        Some(config),
     )?;
 
     let written = write_unpadded(&unsealed, &mut buf_writer, offset.into(), num_bytes.into())?;
@@ -377,7 +377,7 @@ mod tests {
     }
 
     #[test]
-    //#[ignore]
+    #[ignore]
     fn test_seal_lifecycle() -> Result<(), failure::Error> {
         pretty_env_logger::try_init().ok();
 
