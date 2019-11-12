@@ -16,7 +16,7 @@ bitvec = "0.5"
 rand = "0.7"
 libc = "0.2"
 # FIXME: Update to a published version.
-merkletree = { git = "https://github.com/filecoin-project/merkle_light", rev = "format-and-storeconf" }
+merkletree = { git = "https://github.com/filecoin-project/merkle_light", rev = "master" }
 failure = "0.1"
 byteorder = "1"
 config = "0.9.3"
