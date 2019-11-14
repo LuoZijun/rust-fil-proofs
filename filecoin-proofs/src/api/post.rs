@@ -1,23 +1,24 @@
 use std::collections::BTreeMap;
 use std::fs::File;
-use std::io::Read;
 
+use merkletree::merkle::{get_merkle_tree_leafs, MerkleTree};
+use merkletree::store::{DiskStore, Store, StoreConfig, DEFAULT_CACHED_ABOVE_BASE_LAYER};
 use rayon::prelude::*;
 use storage_proofs::circuit::multi_proof::MultiProof;
 use storage_proofs::circuit::rational_post::RationalPoStCompound;
 use storage_proofs::compound_proof::{self, CompoundProof};
 use storage_proofs::crypto::pedersen::JJ_PARAMS;
-use storage_proofs::drgraph::Graph;
 use storage_proofs::error::Error;
 use storage_proofs::hasher::pedersen::{PedersenDomain, PedersenHasher};
 use storage_proofs::proof::NoRequirements;
 use storage_proofs::rational_post;
 use storage_proofs::sector::*;
+use storage_proofs::stacked::CacheKey;
 
 use crate::api::util::as_safe_commitment;
 use crate::caches::{get_post_params, get_post_verifying_key};
 use crate::error;
-use crate::parameters::{post_setup_params, public_params};
+use crate::parameters::post_setup_params;
 use crate::types::{ChallengeSeed, Commitment, PaddedBytesAmount, PersistentAux, PoStConfig, Tree};
 use std::path::PathBuf;
 
@@ -88,13 +89,25 @@ impl PrivateReplicaInfo {
     }
 
     /// Generate the merkle tree of this particular replica.
-    pub fn merkle_tree(&self, sector_size: u64) -> Result<Tree, Error> {
-        let mut f_in = File::open(&self.access)?;
-        let mut data = Vec::new();
-        f_in.read_to_end(&mut data)?;
+    pub fn merkle_tree(&self, _sector_size: u64) -> Result<Tree, Error> {
+        let tree_size = {
+            let f_in = File::open(&self.access)?;
+            let metadata = f_in.metadata()?;
+            let store_size = metadata.len() as usize;
 
-        let bytes = PaddedBytesAmount(sector_size as u64);
-        public_params(bytes, 1).graph.merkle_tree(&data)
+            store_size / std::mem::size_of::<PedersenDomain>()
+        };
+        let mut config = StoreConfig::new(
+            &self.cache_dir,
+            CacheKey::CommRLastTree.to_string(),
+            DEFAULT_CACHED_ABOVE_BASE_LAYER,
+        );
+        config.size = Some(tree_size);
+        let tree_d_store: DiskStore<PedersenDomain> = DiskStore::new_from_disk(tree_size, &config)?;
+        let tree_d: Tree =
+            MerkleTree::from_data_store(tree_d_store, get_merkle_tree_leafs(tree_size));
+
+        Ok(tree_d)
     }
 }
 
