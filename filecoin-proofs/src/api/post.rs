@@ -94,7 +94,7 @@ impl PrivateReplicaInfo {
         f_in.read_to_end(&mut data)?;
 
         let bytes = PaddedBytesAmount(sector_size as u64);
-        public_params(bytes, 1).graph.merkle_tree(&data)
+        public_params(bytes, 1).wrapper_graph.merkle_tree(&data)
     }
 }
 
