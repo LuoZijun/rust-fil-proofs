@@ -3,8 +3,9 @@ use crate::hasher::Hasher;
 use crate::porep::PoRep;
 use crate::stacked::{
     params::{PersistentAux, PublicParams, Tau, TemporaryAux, Tree},
-    proof::StackedDrg,
+    proof::{StackedDrg, WINDOW_SIZE_BYTES, WINDOW_SIZE_NODES},
 };
+use crate::util::NODE_SIZE;
 
 impl<'a, 'c, H: 'static + Hasher, G: 'static + Hasher> PoRep<'a, H, G> for StackedDrg<'a, H, G> {
     type Tau = Tau<<H as Hasher>::Domain, <G as Hasher>::Domain>;
@@ -17,7 +18,8 @@ impl<'a, 'c, H: 'static + Hasher, G: 'static + Hasher> PoRep<'a, H, G> for Stack
         data_tree: Option<Tree<G>>,
     ) -> Result<(Self::Tau, Self::ProverAux)> {
         let (tau, p_aux, t_aux) = Self::transform_and_replicate_layers(
-            &pp.graph,
+            &pp.window_graph,
+            &pp.wrapper_graph,
             &pp.layer_challenges,
             replica_id,
             data,
@@ -34,8 +36,8 @@ impl<'a, 'c, H: 'static + Hasher, G: 'static + Hasher> PoRep<'a, H, G> for Stack
     ) -> Result<Vec<u8>> {
         let mut data = data.to_vec();
 
-        Self::extract_and_invert_transform_layers(
-            &pp.graph,
+        Self::extract_all_windows(
+            &pp.window_graph,
             &pp.layer_challenges,
             replica_id,
             &mut data,
@@ -45,11 +47,29 @@ impl<'a, 'c, H: 'static + Hasher, G: 'static + Hasher> PoRep<'a, H, G> for Stack
     }
 
     fn extract(
-        _pp: &PublicParams<H>,
-        _replica_id: &<H as Hasher>::Domain,
-        _data: &[u8],
-        _node: usize,
+        pp: &PublicParams<H>,
+        replica_id: &<H as Hasher>::Domain,
+        data: &[u8],
+        node: usize,
     ) -> Result<Vec<u8>> {
-        unimplemented!();
+        // grab the window for this node
+        let window_start_index = node / WINDOW_SIZE_NODES;
+        let window_start = window_start_index * WINDOW_SIZE_BYTES;
+        let window_end = (window_start_index + 1) * WINDOW_SIZE_BYTES;
+        let mut window = data[window_start..window_end].to_vec();
+
+        Self::extract_single_window(
+            &pp.window_graph,
+            pp.layer_challenges.layers(),
+            replica_id,
+            &mut window,
+        );
+
+        let node_window_index = node % WINDOW_SIZE_NODES;
+        let start = node_window_index * NODE_SIZE;
+        let end = (node_window_index + 1) * NODE_SIZE;
+        let node = window[start..end].to_vec();
+
+        Ok(node)
     }
 }

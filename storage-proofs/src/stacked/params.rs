@@ -40,7 +40,8 @@ pub struct PublicParams<H>
 where
     H: 'static + Hasher,
 {
-    pub graph: StackedBucketGraph<H>,
+    pub window_graph: StackedBucketGraph<H>,
+    pub wrapper_graph: StackedBucketGraph<H>,
     pub layer_challenges: LayerChallenges,
     _h: PhantomData<H>,
 }
@@ -49,9 +50,14 @@ impl<H> PublicParams<H>
 where
     H: Hasher,
 {
-    pub fn new(graph: StackedBucketGraph<H>, layer_challenges: LayerChallenges) -> Self {
+    pub fn new(
+        window_graph: StackedBucketGraph<H>,
+        wrapper_graph: StackedBucketGraph<H>,
+        layer_challenges: LayerChallenges,
+    ) -> Self {
         PublicParams {
-            graph,
+            window_graph,
+            wrapper_graph,
             layer_challenges,
             _h: PhantomData,
         }
@@ -64,14 +70,15 @@ where
 {
     fn identifier(&self) -> String {
         format!(
-            "layered_drgporep::PublicParams{{ graph: {}, challenges: {:?} }}",
-            self.graph.identifier(),
+            "layered_drgporep::PublicParams{{ window_graph: {}, wrapper_graph: {}, challenges: {:?} }}",
+            self.window_graph.identifier(),
+            self.wrapper_graph.identifier(),
             self.layer_challenges,
         )
     }
 
     fn sector_size(&self) -> u64 {
-        self.graph.sector_size()
+        self.wrapper_graph.sector_size()
     }
 }
 
@@ -80,7 +87,11 @@ where
     H: Hasher,
 {
     fn from(other: &PublicParams<H>) -> PublicParams<H> {
-        PublicParams::new(other.graph.clone(), other.layer_challenges.clone())
+        PublicParams::new(
+            other.window_graph.clone(),
+            other.wrapper_graph.clone(),
+            other.layer_challenges.clone(),
+        )
     }
 }
 
@@ -313,6 +324,7 @@ pub struct Tau<D: Domain, E: Domain> {
 #[derive(Default, Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct PersistentAux<D> {
     pub comm_c: D,
+    pub comm_q: D,
     pub comm_r_last: D,
 }
 
@@ -321,6 +333,7 @@ pub struct TemporaryAux<H: Hasher, G: Hasher> {
     /// The encoded nodes for 1..layers.
     pub labels: Labels<H>,
     pub tree_d: Tree<G>,
+    pub tree_q: Tree<H>,
     pub tree_r_last: Tree<H>,
     pub tree_c: Tree<H>,
 }
