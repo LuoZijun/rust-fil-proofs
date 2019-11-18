@@ -103,6 +103,7 @@ impl<'a, H: 'static + Hasher, G: 'static + Hasher> StackedDrg<'a, H, G> {
             .collect()
     }
 
+    #[allow(clippy::too_many_arguments)]
     fn prove_single_challenge(
         challenge: usize,
         challenge_index: usize,
@@ -313,10 +314,17 @@ impl<'a, H: 'static + Hasher, G: 'static + Hasher> StackedDrg<'a, H, G> {
 
         assert_eq!(data.len() % WINDOW_SIZE_BYTES, 0, "invalid data size");
 
-        data.par_chunks_mut(WINDOW_SIZE_BYTES)
-            .for_each(|data_chunk| {
-                Self::extract_single_window(window_graph, layers, replica_id, data_chunk);
-            });
+        data.par_chunks_mut(WINDOW_SIZE_BYTES).enumerate().for_each(
+            |(window_index, data_chunk)| {
+                Self::extract_single_window(
+                    window_graph,
+                    layers,
+                    replica_id,
+                    data_chunk,
+                    window_index,
+                );
+            },
+        );
 
         Ok(())
     }
@@ -326,6 +334,7 @@ impl<'a, H: 'static + Hasher, G: 'static + Hasher> StackedDrg<'a, H, G> {
         layers: usize,
         replica_id: &<H as Hasher>::Domain,
         data_chunk: &mut [u8],
+        window_index: usize,
     ) {
         trace!("extract_single_window");
 
@@ -351,6 +360,7 @@ impl<'a, H: 'static + Hasher, G: 'static + Hasher> StackedDrg<'a, H, G> {
                     &parents,
                     exp_parents_data.as_ref(),
                     &layer_labels,
+                    window_index,
                     node,
                 );
 
@@ -431,6 +441,7 @@ impl<'a, H: 'static + Hasher, G: 'static + Hasher> StackedDrg<'a, H, G> {
                         exp_parents_data.as_ref(),
                         &mut layer_labels,
                         data_chunk,
+                        window_index,
                     );
 
                     if let Some(ref mut exp_parents_data) = exp_parents_data {
@@ -466,6 +477,7 @@ impl<'a, H: 'static + Hasher, G: 'static + Hasher> StackedDrg<'a, H, G> {
         exp_parents_data: Option<&Vec<u8>>,
         layer_labels: &mut [u8],
         data_chunk: &mut [u8],
+        window_index: usize,
     ) {
         for node in 0..window_graph.size() {
             window_graph.parents(node, parents);
@@ -476,6 +488,7 @@ impl<'a, H: 'static + Hasher, G: 'static + Hasher> StackedDrg<'a, H, G> {
                 parents,
                 exp_parents_data,
                 &layer_labels,
+                window_index,
                 node,
             );
             let start = node * NODE_SIZE;
@@ -658,11 +671,14 @@ fn create_key<H: Hasher>(
     parents: &[u32],
     exp_parents_data: Option<&Vec<u8>>,
     layer_labels: &[u8],
+    window_index: usize,
     node: usize,
 ) -> GenericArray<u8, <Sha256 as Digest>::OutputSize> {
+    // hash window_index
+    hasher.input(&(window_index as u64).to_be_bytes());
+
     // hash node id
-    let node_arr = (node as u64).to_be_bytes();
-    hasher.input(&node_arr);
+    hasher.input(&(node as u64).to_be_bytes());
 
     // hash parents for all non 0 nodes
     if node > 0 {
