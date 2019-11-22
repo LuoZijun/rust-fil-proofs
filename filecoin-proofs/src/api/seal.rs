@@ -238,7 +238,7 @@ pub fn seal_commit<T: AsRef<Path>>(
     );
 
     proof.write(&mut buf)?;
-
+    
     if std::env::var("DUMP_SEAL_PARAMS").is_ok() {
         // pub type SectorSize          : u64
         // pub type PoRepProofPartitions: u8
