@@ -239,6 +239,43 @@ pub fn seal_commit<T: AsRef<Path>>(
 
     proof.write(&mut buf)?;
 
+    if std::env::var("DUMP_SEAL_PARAMS").is_ok() {
+        // pub type SectorSize          : u64
+        // pub type PoRepProofPartitions: u8
+        #[derive(Debug)]
+        pub struct SealParamsHeader {
+            porep_config: PoRepConfig,       // (SectorSize, PoRepProofPartitions)
+            pre_commit: SealPreCommitOutput, // { a: [u8; 32], b: [u8; 32] }
+            prover_id: ProverId, // [u8; 32]
+            sector_id: SectorId, // u64
+            ticket: Ticket,      // [u8; 32]
+            seed: Ticket,        // [u8; 32]
+        }
+        
+        #[derive(Debug)]
+        pub struct SealParams {
+            header: SealParamsHeader,
+            buf: Vec<u8>,
+        }
+
+        let hdr = SealParamsHeader {
+            porep_config,
+            pre_commit: SealPreCommitOutput { comm_r, comm_d, },
+            prover_id,
+            sector_id,
+            ticket,
+            seed,
+        };
+        unsafe {
+            let len = std::mem::size_of::<SealParamsHeader>();
+            let ptr = &hdr as *const SealParamsHeader as *const u8;
+            let bytes = std::slice::from_raw_parts(ptr, len);
+            // let bytes = std::mem::transmute::<&SealParamsHeader, &[u8]>(&hdr);
+            println!("verify_seal args: {:?}", bytes);
+            println!("{:?}", &buf);
+        }
+    }
+
     // Verification is cheap when parameters are cached,
     // and it is never correct to return a proof which does not verify.
     assert!(
