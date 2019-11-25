@@ -11,6 +11,8 @@ use filecoin_proofs::SealPreCommitOutput;
 use filecoin_proofs::ProverId;
 use filecoin_proofs::Ticket;
 
+use storage_proofs::sector::SectorId;
+
 
 // verify_seal args: [0, 4, 0, 0, 0, 0, 0, 0, 1, 239, 51, 41, 62, 86, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 172, 188, 173, 224, 31, 107, 17, 69, 8, 14, 138, 188, 4, 103, 127, 136, 172, 141, 24
 // , 231, 172, 65, 3, 141, 114, 184, 181, 110, 234, 205, 235, 110, 221, 231, 195, 145, 197, 238, 59, 178, 40, 131, 234, 207, 101, 127, 35, 240, 135, 187, 195, 237, 225, 41, 50, 171, 31
@@ -48,11 +50,6 @@ const CPU_PARAMS_PAYLOAD: [u8; 192] = [
     67, 97, 214, 84, 12, 22, 153, 37
 ];
 
-
-
-use storage_proofs::sector::SectorId;
-
-
 // pub type SectorSize          : u64
 // pub type PoRepProofPartitions: u8
 #[derive(Debug)]
@@ -76,7 +73,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     std::env::set_var("RUST_BACKTRACE", "full");
     
     pretty_env_logger::init_timed();
-
+    
     unsafe {
         let len = std::mem::size_of::<SealParamsHeader>();
         assert_eq!(len, CPU_PARAMS_HDR.len());
