@@ -46,3 +46,22 @@ bincode = "1.1.2"
 [features]
 default = ["gpu"]
 gpu = ["storage-proofs/gpu", "filecoin-proofs/gpu", "bellperson/gpu", "fil-sapling-crypto/gpu"]
+
+[profile.dev]
+opt-level = 0
+debug = true
+rpath = false
+lto = false
+debug-assertions = true
+codegen-units = 12
+panic = 'unwind'
+incremental = false
+
+[profile.release]
+opt-level = 3
+debug = false
+rpath = false
+lto = true
+debug-assertions = false
+panic = 'unwind'
+incremental = false
