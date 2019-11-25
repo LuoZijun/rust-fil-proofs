@@ -8,3 +8,5 @@ members = [
 
 [patch.crates-io]
 bellperson = { git = "https://github.com/LuoZijun/bellman.git", branch = "patch-1" }
+# bellperson = { path = "../bellman" }
+ff = { git = "https://github.com/Luozijun/ff.git", branch = "patch-1" }
