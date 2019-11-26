@@ -8,6 +8,11 @@ mod hash_fns;
 mod stacked;
 
 fn main() {
+    if let Err(_) = std::env::var("RUST_LOG") {
+        std::env::set_var("RUST_LOG", "trace");
+        // std::env::set_var("RUST_BACKTRACE", "full");
+    }
+    
     std::env::set_var("RUST_LOG", "debug");
     // std::env::set_var("RUST_BACKTRACE", "full");
     
