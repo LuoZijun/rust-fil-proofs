@@ -13,9 +13,6 @@ fn main() {
         // std::env::set_var("RUST_BACKTRACE", "full");
     }
     
-    std::env::set_var("RUST_LOG", "debug");
-    // std::env::set_var("RUST_BACKTRACE", "full");
-    
     pretty_env_logger::init_timed();
 
     let stacked_cmd = SubCommand::with_name("stacked")
